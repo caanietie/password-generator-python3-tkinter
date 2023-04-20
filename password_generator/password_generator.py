@@ -1,8 +1,9 @@
 import random
 import tkinter
+import sqlite3
 from os import path
 from tkinter import font
-from tkinter import messagebox
+from tkinter import messagebox, simpledialog
 
 
 def copy_password():
@@ -33,7 +34,7 @@ def gen_password():
         if pass_len.get() > len(condStr):
             pass_len.set(len(condStr))
             messagebox.showwarning(
-                title='PassGen',
+                title='Password Generator',
                 message=f'Only {len(condStr)} unique characters are possible'
             )
         pass_sugg.set(''.join(random.sample(condStr, pass_len.get())))
@@ -43,6 +44,26 @@ def gen_password():
             for i in range(pass_len.get())
         ]))
     asterisk.set('＊'*pass_len.get())
+
+
+def save_password():
+    if pass_sugg.get():
+        pass_id = simpledialog.askstring(
+            'Password Generator', 'Enter identifier for password'
+        )
+        if pass_id:
+            stmt = 'INSERT INTO password_generator(identifier, password) VALUES(?, ?)'
+            db_pth = path.abspath(
+                path.dirname(__file__) + '/data/password_generator.db'
+            )
+            db_con = sqlite3.connect(db_pth)
+            db_con.execute(stmt, [pass_id, pass_sugg.get()])
+            db_con.commit()
+            messagebox.showinfo('Password Generator', 'Password saved!')
+        elif pass_id == "":
+            messagebox.showwarning(
+                'Password Generator', 'Password identifier cannot be blank!'
+            )
 
 
 def header(tk_obj):
@@ -86,6 +107,10 @@ def suggestion(tk_obj):
     tkinter.Button(
         sug, image=eye_blocked_btn, command=switch_eye,
         width=25, height=25, name='eye'
+    ).pack(side='right')
+    tkinter.Button(
+        sug, image=floppy_disk_btn, command=save_password,
+        width=25, height=25
     ).pack(side='right')
     return sug
 
@@ -166,34 +191,52 @@ def generate_password(tk_obj):
     return pgen
 
 
-root = tkinter.Tk(className='PassGen')
 fp = path.abspath(path.dirname(__file__)+'/assets/pass_gen.png')
+
+root = tkinter.Tk(className='PassGen')
 root.resizable(width=False, height=False)
 root.iconphoto(True, tkinter.PhotoImage(file=fp))
 root.title("Password Generator")
+
 pass_sugg = tkinter.StringVar()
 pass_len = tkinter.IntVar()
 pass_len.initialize(8)
+
 asterisk = tkinter.StringVar()
+
+floppy_disk_btn = tkinter.PhotoImage(
+    format='png', width=20, height=20,
+    file=path.dirname(__file__)+'/assets/floppy-disk.png'
+)
+
 allowed = tkinter.BooleanVar()
 allowed.initialize(False)
-lowercase = tkinter.BooleanVar()
-lowercase.initialize(True)
-uppercase = tkinter.BooleanVar()
-uppercase.initialize(True)
-number = tkinter.BooleanVar()
-number.initialize(True)
-symbol = tkinter.BooleanVar()
-duplicate = tkinter.BooleanVar()
-space = tkinter.BooleanVar()
-strength_length = tkinter.StringVar()
-strength_color = tkinter.StringVar()
+eye_allowed_btn = eye_btn(True)
+eye_blocked_btn = eye_btn(False)
+
 copy_btn = tkinter.PhotoImage(
     format='png', width=20, height=20,
     file=path.dirname(__file__)+'/assets/copy.png'
 )
-eye_allowed_btn = eye_btn(True)
-eye_blocked_btn = eye_btn(False)
+
+lowercase = tkinter.BooleanVar()
+lowercase.initialize(True)
+
+uppercase = tkinter.BooleanVar()
+uppercase.initialize(True)
+
+number = tkinter.BooleanVar()
+number.initialize(True)
+
+symbol = tkinter.BooleanVar()
+
+duplicate = tkinter.BooleanVar()
+
+space = tkinter.BooleanVar()
+
+strength_length = tkinter.StringVar()
+strength_color = tkinter.StringVar()
+
 frame = tkinter.Frame(root, borderwidth=1, relief="raised")
 header(frame).pack()
 suggestion(frame).pack()
